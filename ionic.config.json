@@ -1,0 +1,8 @@
+{
+  "name": "KOTA",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular",
+  "id": "3cfd5a9a"
+}
