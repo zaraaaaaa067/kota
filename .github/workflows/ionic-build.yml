@@ -6,16 +6,20 @@ on:
   workflow_dispatch:
 
 jobs:
-# ==================== ANDROID BUILD JOB ====================
   build-android:
     runs-on: ubuntu-latest
     steps:
+    # REPLACED GIT CLONE WITH THE OFFICIAL SECURE CHECKOUT METHOD:
+    - name: Checkout repository code
+      uses: actions/checkout@v4
+
+    # The workflow continues normally from here inside your project files
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
 
-    - name: Set up Java (Required for Android/Gradle)
+    - name: Set up Java
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
@@ -24,36 +28,37 @@ jobs:
     - name: Install Ionic and Capacitor CLI
       run: npm install -g @ionic/cli @capacitor/assets @capacitor/core @capacitor/cli
 
-    - name: Clone target repository
-      run: git clone https://github.com kota
-
     - name: Install Dependencies and Build Web Assets
       run: |
-        cd kota
-        npm install
+        npm install --legacy-peer-deps
         ionic build --prod
 
-    - name: Generate Android Native Project
+    - name: Handle Capacitor Setup and Sync
       run: |
-        cd kota
+        if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
+          npx cap init kota com.example.kota --web-dir=www
+        fi
         npx cap add android || true
         npx cap sync android
 
     - name: Compile Android Debug APK
       run: |
-        cd kota/android
+        cd android
         ./gradlew assembleDebug
 
     - name: Upload Android APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: android-debug-apk
-        path: kota/android/app/build/outputs/apk/debug/app-debug.apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
 
-# ==================== iOS BUILD JOB ====================
   build-ios:
     runs-on: macos-latest
     steps:
+    # REPLACED GIT CLONE WITH THE OFFICIAL SECURE CHECKOUT METHOD:
+    - name: Checkout repository code
+      uses: actions/checkout@v4
+
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
@@ -62,28 +67,27 @@ jobs:
     - name: Install Ionic and Capacitor CLI
       run: npm install -g @ionic/cli @capacitor/assets @capacitor/core @capacitor/cli
 
-    - name: Clone target repository
-      run: git clone https://github.com kota
-
     - name: Install Dependencies and Build Web Assets
       run: |
-        cd kota
-        npm install
+        npm install --legacy-peer-deps
         ionic build --prod
 
-    - name: Generate iOS Xcode Project
+    - name: Handle Capacitor Setup and Sync
       run: |
-        cd kota
+        if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
+          npx cap init kota com.example.kota --web-dir=www
+        fi
         npx cap add ios || true
         npx cap sync ios
 
-    - name: Compile Xcode Project (Unsigned Debug)
+    - name: Compile Xcode Project (Bypass Signings)
       run: |
-        cd kota/ios/App
-        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -allowProvisioningUpdates CODE_SIGNING_ALLOWED=NO
+        cd ios/App
+        xcodebuild -workspace App.xcworkspace -scheme App -destination 'generic/platform=iOS' -configuration Debug CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
 
     - name: Upload iOS Xcode Project Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ios-xcode-project
-        path: kota/ios/App
+        path: ios/App
+
