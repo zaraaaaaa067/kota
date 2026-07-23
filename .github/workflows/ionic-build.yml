@@ -12,7 +12,6 @@ jobs:
     - name: Checkout repository code
       uses: actions/checkout@v4
 
-    # UPDATED NODE VERSION TO 22 TO MATCH CAPACITOR REQUIREMENTS:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
@@ -42,10 +41,13 @@ jobs:
         npx cap add android || true
         npx cap sync android
 
-    - name: Compile Android Debug APK
+    # MEMBAIKI RALAT GRADLE DENGAN MENJANAKAN SEMULA WRAPPER YANG SESUAI DENGAN UBUNTU SERVER
+    - name: Repair and Compile Android Debug APK
       run: |
         cd android
-        ./gradlew assembleDebug
+        gradle wrapper --gradle-version 8.2
+        chmod +x gradlew
+        ./gradlew assembleDebug || ./gradlew assembleDebug --no-daemon
 
     - name: Upload Android APK Artifact
       uses: actions/upload-artifact@v4
@@ -59,7 +61,6 @@ jobs:
     - name: Checkout repository code
       uses: actions/checkout@v4
 
-    # UPDATED NODE VERSION TO 22 TO MATCH CAPACITOR REQUIREMENTS:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
@@ -83,10 +84,11 @@ jobs:
         npx cap add ios || true
         npx cap sync ios
 
-    - name: Compile Xcode Project (Bypass Signings)
+    # MEMBAIKI SEKATAN XCODE DENGAN MEMAKSA SKEMA BINAAN ASAS TANPA MEMERLUKAN APPLE DEVELOPER ACCOUNT
+    - name: Compile Xcode Project (Clean Build)
       run: |
         cd ios/App
-        xcodebuild -workspace App.xcworkspace -scheme App -destination 'generic/platform=iOS' -configuration Debug CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+        xcodebuild -workspace App.xcworkspace -scheme App -destination 'generic/platform=iOS' -configuration Debug CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO clean build
 
     - name: Upload iOS Xcode Project Artifact
       uses: actions/upload-artifact@v4
