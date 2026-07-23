@@ -27,28 +27,13 @@ jobs:
       run: npm install -g @ionic/cli @capacitor/assets @capacitor/cli
 
     - name: Install Project Dependencies
-      run: |
-        npm install --legacy-peer-deps
-        npm install @capacitor/core @capacitor/android --save-dev
+      run: npm install --legacy-peer-deps
 
-    - name: Build Web Assets
-      run: ionic build --prod
-
+    # REPLACED SEPARATE BUILD AND SYNC WITH THE OFFICIAL NATIVE INTEGRATION:
     - name: Handle Capacitor Setup and Sync
       run: |
-        # Safely determine if build folder is www, dist, or build
-        WEB_DIR="www"
-        if [ -d "dist" ]; then WEB_DIR="dist"; fi
-        if [ -d "build" ]; then WEB_DIR="build"; fi
-        
-        # Force generate config if missing entirely
-        if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
-          npx cap init kota com.example.kota --web-dir=$WEB_DIR --confirm
-        fi
-        
-        # Sync and add Android platform
         npx cap add android || true
-        npx cap sync android
+        ionic capacitor sync android
 
     - name: Compile Android Debug APK
       run: |
@@ -76,25 +61,13 @@ jobs:
       run: npm install -g @ionic/cli @capacitor/assets @capacitor/cli
 
     - name: Install Project Dependencies
-      run: |
-        npm install --legacy-peer-deps
-        npm install @capacitor/core @capacitor/ios --save-dev
+      run: npm install --legacy-peer-deps
 
-    - name: Build Web Assets
-      run: ionic build --prod
-
+    # REPLACED SEPARATE BUILD AND SYNC WITH THE OFFICIAL NATIVE INTEGRATION:
     - name: Handle Capacitor Setup and Sync
       run: |
-        WEB_DIR="www"
-        if [ -d "dist" ]; then WEB_DIR="dist"; fi
-        if [ -d "build" ]; then WEB_DIR="build"; fi
-        
-        if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
-          npx cap init kota com.example.kota --web-dir=$WEB_DIR --confirm
-        fi
-        
         npx cap add ios || true
-        npx cap sync ios
+        ionic capacitor sync ios
 
     - name: Compile Xcode Project (Bypass Signings)
       run: |
@@ -106,5 +79,3 @@ jobs:
       with:
         name: ios-xcode-project
         path: ios/App
-
-
