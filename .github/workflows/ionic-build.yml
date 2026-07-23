@@ -9,11 +9,9 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     steps:
-    # REPLACED GIT CLONE WITH THE OFFICIAL SECURE CHECKOUT METHOD:
     - name: Checkout repository code
       uses: actions/checkout@v4
 
-    # The workflow continues normally from here inside your project files
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
@@ -25,19 +23,30 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Install Ionic and Capacitor CLI
-      run: npm install -g @ionic/cli @capacitor/assets @capacitor/core @capacitor/cli
+    - name: Install Global CLIs
+      run: npm install -g @ionic/cli @capacitor/assets @capacitor/cli
 
-    - name: Install Dependencies and Build Web Assets
+    - name: Install Project Dependencies
       run: |
         npm install --legacy-peer-deps
-        ionic build --prod
+        npm install @capacitor/core @capacitor/android --save-dev
+
+    - name: Build Web Assets
+      run: ionic build --prod
 
     - name: Handle Capacitor Setup and Sync
       run: |
+        # Safely determine if build folder is www, dist, or build
+        WEB_DIR="www"
+        if [ -d "dist" ]; then WEB_DIR="dist"; fi
+        if [ -d "build" ]; then WEB_DIR="build"; fi
+        
+        # Force generate config if missing entirely
         if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
-          npx cap init kota com.example.kota --web-dir=www
+          npx cap init kota com.example.kota --web-dir=$WEB_DIR --confirm
         fi
+        
+        # Sync and add Android platform
         npx cap add android || true
         npx cap sync android
 
@@ -55,7 +64,6 @@ jobs:
   build-ios:
     runs-on: macos-latest
     steps:
-    # REPLACED GIT CLONE WITH THE OFFICIAL SECURE CHECKOUT METHOD:
     - name: Checkout repository code
       uses: actions/checkout@v4
 
@@ -64,19 +72,27 @@ jobs:
       with:
         node-version: '20'
 
-    - name: Install Ionic and Capacitor CLI
-      run: npm install -g @ionic/cli @capacitor/assets @capacitor/core @capacitor/cli
+    - name: Install Global CLIs
+      run: npm install -g @ionic/cli @capacitor/assets @capacitor/cli
 
-    - name: Install Dependencies and Build Web Assets
+    - name: Install Project Dependencies
       run: |
         npm install --legacy-peer-deps
-        ionic build --prod
+        npm install @capacitor/core @capacitor/ios --save-dev
+
+    - name: Build Web Assets
+      run: ionic build --prod
 
     - name: Handle Capacitor Setup and Sync
       run: |
+        WEB_DIR="www"
+        if [ -d "dist" ]; then WEB_DIR="dist"; fi
+        if [ -d "build" ]; then WEB_DIR="build"; fi
+        
         if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
-          npx cap init kota com.example.kota --web-dir=www
+          npx cap init kota com.example.kota --web-dir=$WEB_DIR --confirm
         fi
+        
         npx cap add ios || true
         npx cap sync ios
 
@@ -90,4 +106,5 @@ jobs:
       with:
         name: ios-xcode-project
         path: ios/App
+
 
