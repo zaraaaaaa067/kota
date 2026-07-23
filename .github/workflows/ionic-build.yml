@@ -1,0 +1,30 @@
+name: Ionic and Capacitor Setup
+
+on:
+  push:
+    branches: [ "main" ] # Runs whenever you push to the main branch
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-install:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Check out your repository code
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    # Step 2: Set up Node.js environment
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-size: '20' # Specify your preferred Node version
+
+    # Step 3: Run your global installations
+    - name: Install Ionic CLI and Capacitor Assets globally
+      run: npm install -g @ionic/cli @capacitor/assets
+
+    # Step 4: Verify the installation
+    - name: Verify Ionic CLI
+      run: ionic --version
