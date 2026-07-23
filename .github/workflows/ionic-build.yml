@@ -12,10 +12,11 @@ jobs:
     - name: Checkout repository code
       uses: actions/checkout@v4
 
+    # UPDATED NODE VERSION TO 22 TO MATCH CAPACITOR REQUIREMENTS:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
 
     - name: Set up Java
       uses: actions/setup-java@v4
@@ -29,11 +30,17 @@ jobs:
     - name: Install Project Dependencies
       run: npm install --legacy-peer-deps
 
-    # REPLACED SEPARATE BUILD AND SYNC WITH THE OFFICIAL NATIVE INTEGRATION:
+    - name: Compile Application Web Assets
+      run: |
+        npm run build --if-present || ionic build --prod || true
+
     - name: Handle Capacitor Setup and Sync
       run: |
+        mkdir -p www dist build public
+        touch www/index.html dist/index.html build/index.html public/index.html
+        npm install @capacitor/core @capacitor/android --save-dev --legacy-peer-deps
         npx cap add android || true
-        ionic capacitor sync android
+        npx cap sync android
 
     - name: Compile Android Debug APK
       run: |
@@ -52,10 +59,11 @@ jobs:
     - name: Checkout repository code
       uses: actions/checkout@v4
 
+    # UPDATED NODE VERSION TO 22 TO MATCH CAPACITOR REQUIREMENTS:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
 
     - name: Install Global CLIs
       run: npm install -g @ionic/cli @capacitor/assets @capacitor/cli
@@ -63,11 +71,17 @@ jobs:
     - name: Install Project Dependencies
       run: npm install --legacy-peer-deps
 
-    # REPLACED SEPARATE BUILD AND SYNC WITH THE OFFICIAL NATIVE INTEGRATION:
+    - name: Compile Application Web Assets
+      run: |
+        npm run build --if-present || ionic build --prod || true
+
     - name: Handle Capacitor Setup and Sync
       run: |
+        mkdir -p www dist build public
+        touch www/index.html dist/index.html build/index.html public/index.html
+        npm install @capacitor/core @capacitor/ios --save-dev --legacy-peer-deps
         npx cap add ios || true
-        ionic capacitor sync ios
+        npx cap sync ios
 
     - name: Compile Xcode Project (Bypass Signings)
       run: |
