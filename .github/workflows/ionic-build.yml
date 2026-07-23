@@ -1,30 +1,89 @@
-name: Ionic and Capacitor Setup
+name: Build Ionic Android and iOS
 
 on:
   push:
-    branches: [ "main" ] # Runs whenever you push to the main branch
-  pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  build-and-install:
+# ==================== ANDROID BUILD JOB ====================
+  build-android:
     runs-on: ubuntu-latest
-
     steps:
-    # Step 1: Check out your repository code
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-
-    # Step 2: Set up Node.js environment
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-size: '20' # Specify your preferred Node version
+        node-version: '20'
 
-    # Step 3: Run your global installations
-    - name: Install Ionic CLI and Capacitor Assets globally
-      run: npm install -g @ionic/cli @capacitor/assets
+    - name: Set up Java (Required for Android/Gradle)
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
 
-    # Step 4: Verify the installation
-    - name: Verify Ionic CLI
-      run: ionic --version
+    - name: Install Ionic and Capacitor CLI
+      run: npm install -g @ionic/cli @capacitor/assets @capacitor/core @capacitor/cli
+
+    - name: Clone target repository
+      run: git clone https://github.com kota
+
+    - name: Install Dependencies and Build Web Assets
+      run: |
+        cd kota
+        npm install
+        ionic build --prod
+
+    - name: Generate Android Native Project
+      run: |
+        cd kota
+        npx cap add android || true
+        npx cap sync android
+
+    - name: Compile Android Debug APK
+      run: |
+        cd kota/android
+        ./gradlew assembleDebug
+
+    - name: Upload Android APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-debug-apk
+        path: kota/android/app/build/outputs/apk/debug/app-debug.apk
+
+# ==================== iOS BUILD JOB ====================
+  build-ios:
+    runs-on: macos-latest
+    steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Ionic and Capacitor CLI
+      run: npm install -g @ionic/cli @capacitor/assets @capacitor/core @capacitor/cli
+
+    - name: Clone target repository
+      run: git clone https://github.com kota
+
+    - name: Install Dependencies and Build Web Assets
+      run: |
+        cd kota
+        npm install
+        ionic build --prod
+
+    - name: Generate iOS Xcode Project
+      run: |
+        cd kota
+        npx cap add ios || true
+        npx cap sync ios
+
+    - name: Compile Xcode Project (Unsigned Debug)
+      run: |
+        cd kota/ios/App
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -allowProvisioningUpdates CODE_SIGNING_ALLOWED=NO
+
+    - name: Upload iOS Xcode Project Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-xcode-project
+        path: kota/ios/App
